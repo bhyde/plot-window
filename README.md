@@ -19,5 +19,12 @@ Third: Plot your data.
 Magic
 -----
 
-The chart is drawn by (flot)[http://www.flotcharts.org/], a javascript library.  The page is rendered via Hunchentoot.  The dynamic updating is done via websockets (with the help of [clws](http://www.cliki.net/clws)).  A tangle of javascript glues it all together, and that's implemented using parenscript.  Various standard libraries on the javascript and common lisp side are used: [Hunchentoot](http://weitz.de/hunchentoot/), Parenscript, jQuery, etc.
-
+The chart is drawn by [flot](http://www.flotcharts.org/), a javascript
+library.  The page is rendered via Hunchentoot.  The dynamic updating
+is done via websockets (with the help of
+[clws](http://www.cliki.net/clws)).  A tangle of javascript glues it
+all together, and that's implemented using parenscript.  Various
+standard libraries on the javascript and common lisp side are used:
+[Hunchentoot](http://weitz.de/hunchentoot/),
+[Parenscript](http://common-lisp.net/project/parenscript/), jQuery,
+etc.
