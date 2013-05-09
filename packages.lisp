@@ -13,4 +13,7 @@
                           #:comment  #:css  #:css-id-name
                           #:css-string  #:inline-css  #:make-css-func
                           #:make-css-var #:pt #:px)
-  (:nicknames "PW"))
+  (:nicknames "PW")
+  (:export 
+   ;; also cl-user:initalize-application
+   #:plot))
