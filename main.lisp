@@ -21,7 +21,7 @@
 (define-javascript-library flot (jquery) "/flot/jquery.flot.js")
 
 (define-easy-handler (flot-ws :uri "/") ()
-  (with-my-page (s :title "Flot Examples")
+  (with-my-page (s :title "Plot Window")
     (add-javascript-libraries 'flot 'jquery-json 'graceful-web-socket)
     (with-script-in-header (s)
       (def-jquery-plugin revise-plot (plotting-instructions)
