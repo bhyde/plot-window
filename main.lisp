@@ -38,11 +38,17 @@
                  (send-ws-msg (data)
                    (chain ws (send (chain $ (to-J-S-O-N data)))))
                  (on-message (e)
-                   (let* ((result (chain $ (parse-j-s-o-n (@ e data))))
-                          (targets (j-query (@ result target)))
-                          (event (@ result event)))
-                     (lg (concatenate 'string "Got: " (chain -J-S-O-N (stringify result))))
-                     (funcall (aref targets event) result)))
+                   (let* ((msg (chain $ (parse-j-s-o-n (@ e data))))
+                          (target (@ msg target))
+                          (selection (if target
+                                         (j-query (@ msg target))
+                                         j-query))
+                          (event (@ msg event))
+                          (argument (if (@ msg argument)
+                                        (@ msg argument)
+                                        msg)))
+                     (lg (concatenate 'string "Got: " (chain -J-S-O-N (stringify msg))))
+                     (funcall (aref selection event) argument)))
                  (setup-plot (instructions)
                    (chain ($ "#ex1") (plot (@ instructions series) (@ instructions details))))
                  (init-scatter-plot ()
@@ -64,11 +70,27 @@
 ;;;; Finally, the whole point our plot function.
 
 (defun plot (&optional (data-points '((1 1) (2 2) (1 4))))
-  (send-json-message
-   `((:target . "#ex1")
-     (:event . "revisePlot")
-     (:series . (,data-points))
-     (:details . ((:points . ((:show . t) (:radius . 2) (:fill-color . 3)))
-                  (:lines . ((:show . t) (:line-width . 1) (:fill-color . 4))))))
-   *last-websocket-client*)
+  (flet ((f (alist)
+           ;; we need this since cl-json's heuristic for deciding what's an alist
+           ;; and hence should become an object doesn't work for some of our needs.
+           (alexandria:alist-hash-table alist)))
+    (send-json-message
+     `((:target . "#ex1")
+       (:event . ,(symbol-to-js-string 'revise-plot))
+       (:series . (,data-points))
+       (:details . ((:points . ,(f '((:show . t) (:radius . 2) (:fill-color . 3))))
+                    (:lines . ,(f '((:show . t) (:line-width . 1) (:fill-color . 4)))))))
+     *last-websocket-client*))
   nil)
+
+
+;;;; Part of an experiment...
+
+(defun ps-eval-in-client* (parenscript-form)
+  (send-json-message
+   `((:event . ,(symbol-to-js-string 'global-eval))
+     (:argument . ,(ps* `(funcall #'(lambda () ,parenscript-form)))))
+   *last-websocket-client*))
+
+(defmacro ps-eval-in-client (&body parenscript-body) 
+  `(eval-in-client* '(progn ,@parenscript-body)))
