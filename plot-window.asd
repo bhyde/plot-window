@@ -2,6 +2,7 @@
 
 (defsystem plot-window
   :licence "Apache 2.0"
+  :serial t
   :depends-on (#:alexandria             ; only for once-only :(
                #:hunchentoot            ; web server
                #:cl-who                 ; html generation
