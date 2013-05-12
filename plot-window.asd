@@ -4,6 +4,7 @@
   :licence "Apache 2.0"
   :serial t
   :depends-on (#:alexandria             ; only for once-only :(
+               #:log4cl
                #:hunchentoot            ; web server
                #:cl-who                 ; html generation
                #:parenscript            ; javascript via sexprs

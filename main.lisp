@@ -10,7 +10,7 @@
 ;;;; Incomming Message Handlers
 
 (define-json-message-handler page-log (message)
-  (lg-message* 2 "WS/~S: ~S" *current-websocket-client* message))
+  (log:info (websocket page-log) "~S" message))
 
 ;;;; Our Web Application, one main page.
 
@@ -34,7 +34,7 @@
       (let ((ws (chain $ (graceful-web-socket (websocket-url)))))
         (labels ((lg (msg)
                    (send-ws-msg (create :type "page-log" :message msg))
-                   (chain console(log msg)))
+                   (chain console (log msg)))
                  (send-ws-msg (data)
                    (chain ws (send (chain $ (to-J-S-O-N data)))))
                  (on-message (e)
@@ -87,6 +87,7 @@
 ;;;; Part of an experiment...
 
 (defun ps-eval-in-client* (parenscript-form)
+  (log:debug '(websocket send) "eval: ~S" parenscript-form)
   (send-json-message
    `((:event . ,(symbol-to-js-string 'global-eval))
      (:argument . ,(ps* `(funcall #'(lambda () ,parenscript-form)))))

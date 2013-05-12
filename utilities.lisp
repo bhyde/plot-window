@@ -57,7 +57,7 @@
 (defmacro with-my-page ((stream &key title) &body body)
   `(let* ((*header-fragments* ())
           (*page-plist* ())
-          (*READ-DEFAULT-FLOAT-FORMAT* 'single-float)
+          (*read-default-float-format* 'single-float)
           (body (with-html-output-to-string (,stream nil :indent *indent-default*)
                   (with-std-body (,stream) ,@body))))
      (with-header-fragment (s)

@@ -13,27 +13,58 @@
 
 (defvar *my-acceptor* nil)
 
+(defclass my-easy-acceptor (easy-acceptor)
+  ())
+
+(defmethod acceptor-log-message ((acceptor my-easy-acceptor) log-level format-string &rest format-arguments)
+  (let ((str (format nil "~?~%"  format-string format-arguments)))
+    (case log-level
+      (:ERROR
+       (log:error '(webserver) str))
+      (:INFO 
+       (log:info '(webserver) str))
+      (:WARNING
+       (log:warn '(webserver) str)))))
+
+(defmethod acceptor-log-access ((acceptor my-easy-acceptor) &key return-code)
+  (log:info '(webserver access) 
+            "~:[-~@[ (~A)~]~;~:*~A~@[ (~A)~]~] ~:[-~;~:*~A~] [~A] \"~A ~A~@[?~A~] ~
+                    ~A\" ~D ~:[-~;~:*~D~] \"~:[-~;~:*~A~]\" \"~:[-~;~:*~A~]\""
+            (remote-addr*)
+            (header-in* :x-forwarded-for)
+            (authorization)
+            (hunchentoot::iso-time)
+            (request-method*)
+            (script-name*)
+            (query-string*)
+            (server-protocol*)
+            return-code
+            (content-length*)
+            (referer)
+            (user-agent)))
+
 (defun start-web-server (&key port)
-    (setf *dispatch-table*
-     (list
-      'dispatch-easy-handlers
-      (flet ((json-rpc-handler ()
-               (let ((json-data (raw-post-data :force-text t)))
-                 (json-rpc:invoke-rpc json-data))))
-        (create-prefix-dispatcher "/js" #'json-rpc-handler))
-      (create-folder-dispatcher-and-handler "/" (concatenate 'string cl-user::*root* "static/"))))
   (when *my-acceptor*
+    (log:info '(web-server) "stopping old web server")
     (stop *my-acceptor*))
+  (setf *dispatch-table*
+        (list
+         'dispatch-easy-handlers
+         (flet ((json-rpc-handler ()
+                  (let ((json-data (raw-post-data :force-text t)))
+                    (json-rpc:invoke-rpc json-data))))
+           (create-prefix-dispatcher "/js" #'json-rpc-handler))
+         (create-folder-dispatcher-and-handler "/" (concatenate 'string cl-user::*root* "static/"))))
+  (log:info '(web-server) "Starting web server")
   (let ((*print-case* :upcase))
     (setf *my-acceptor*
           (start
-           (make-instance 'easy-acceptor :port port)))))
+           (make-instance 'my-easy-acceptor :port port)))))
+
+
+
 
 ;;;; Web Sockets Server
-
-(defun lg-message* (level format-string &rest args)
-  (let ((*acceptor* *my-acceptor*))
-    (apply #'log-message* level format-string args)))
 
 (defvar *my-clws-server-process* nil)
 (defvar *my-clws-server-process-port* 8766)
@@ -44,9 +75,9 @@
 (defun start-clws-server ()
   (when (and *my-clws-server-process*
              (bordeaux-threads:thread-alive-p *my-clws-server-process*))
-    (lg-message* 2 "destroying websocket server")
+    (log:info "destroying websocket server")
     (bordeaux-threads:destroy-thread *my-clws-server-process*))
-  (lg-message* 2 "starting websocket server")
+  (log:info "starting websocket server")
   (setf *my-clws-server-process*
         (bordeaux-threads:make-thread 
          #'(lambda () (clws:run-server *my-clws-server-process-port*))
@@ -78,36 +109,45 @@
   ())
 
 (defmethod ws:resource-client-connected ((r json-rcp-resource) (*current-websocket-client* ws::client))
-  (lg-message* "Websocket/jm connect from ~s:~s~" 
-               (clws:client-host *current-websocket-client*)
-               (clws:client-port *current-websocket-client*))
+  (log:debug '(websocket jm)
+             "connect from ~s:~s" 
+             (clws:client-host *current-websocket-client*)
+             (clws:client-port *current-websocket-client*))
   t)
 
 (defmethod ws:resource-client-disconnected ((r json-rcp-resource) (*current-websocket-client* ws::client))
   (declare (ignore r))
-  (lg-message* "Websocket/jm disconnected from ~s:~s~"
+  (log:debug '(websocket jm)
+             "disconnected from ~s:~s"
                (clws:client-host *current-websocket-client*)
                (clws:client-port *current-websocket-client*)))
 
 
 (defmethod ws:resource-received-text ((res json-rcp-resource) (*current-websocket-client* ws::client) message)
   (setf *last-websocket-client* *current-websocket-client*)
-  (lg-message* "websocket/jm msg: ~s" message)
+  (log:debug '(websocket jm) "msg: ~s" message)
   (dispatch-json-msg message))
 
 (defun send-json-message (message-json-alist &optional (client *current-websocket-client*))
+  (log:debug '(websocket sender) "sending msg ~S" message-json-alist)
   (ws:write-to-client-text client (json:encode-json-to-string message-json-alist)))
 
 #+nil
 (defmethod resource-received-binary ((res json-rcp-resource) client message)
   ...)
 
-(defun start-and-register-json-rpc-resource ()
-  (ws:register-global-resource 
-   "/jm"
-   (make-instance 'json-rcp-resource)
-   (ws:origin-prefix "http://127.0.0.1" "http://localhost"))
-  (bordeaux-threads:make-thread
-   #'(lambda ()
-     (clws:run-resource-listener (clws:find-global-resource "/jm")))
-   :name "resource listener for /jm"))
+(let (thread)
+  (defun start-and-register-json-rpc-resource ()
+    (when thread
+      (log:info '(websocket) "kill old msg listener resource")
+      (bordeaux-threads:destroy-thread thread))
+    (ws:register-global-resource 
+     "/jm"
+     (make-instance 'json-rcp-resource)
+     (ws:origin-prefix "http://127.0.0.1" "http://localhost"))
+      (log:info `(websocket) "Start msg listener resource")
+    (setf thread
+          (bordeaux-threads:make-thread
+           #'(lambda ()
+               (clws:run-resource-listener (clws:find-global-resource "/jm")))
+           :name "resource listener for /jm"))))
