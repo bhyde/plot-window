@@ -129,6 +129,7 @@
   (dispatch-json-msg message))
 
 (defun send-json-message (message-json-alist &optional (client *current-websocket-client*))
+  (assert (not (clws:client-connection-rejected client)))
   (log:debug '(websocket sender) "sending msg ~S" message-json-alist)
   (ws:write-to-client-text client (json:encode-json-to-string message-json-alist)))
 

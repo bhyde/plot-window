@@ -1,5 +1,20 @@
 (in-package #:plot-window)
 
+(defun build-symbol (&rest bits)
+  (intern (format nil "~@:(~{~A~}~)" bits)))
+
+(defun build-keyword (x)
+  (intern (format nil "~@:(~S~)" x) :keyword))
+
+(defmacro with-alist-bind ((&rest vars) alist &body body)
+  (once-only (alist)
+    `(let ,(loop
+              for var in vars
+              collect `(,var (cdr (assoc ,(build-keyword var) ,alist))))
+       ,@body)))
+
+;;;; Some CSS defaults
+
 (defparameter *std-margin* "0.5em")
 (defparameter *double-std-margin* "1em")
 
@@ -103,15 +118,30 @@
      (with-script-in-header (,stream)
        ($ (lambda () ,@parenscript)))))
 
-(defun create-keyword (x)
-  (intern (format nil "~@:(~S~)" x) :keyword))
-
-(defmacro with-alist-bind ((&rest vars) alist &body body)
-  (once-only (alist)
-    `(let ,(loop
-              for var in vars
-              collect `(,var (cdr (assoc ,(create-keyword var) ,alist))))
-       ,@body)))
+(defpsmacro with-js-libraries ((&rest libraries) &body body)
+  (let (needed-libraries)
+    (labels ((collect-needed-libraries (libraries)
+               (loop 
+                  for library in libraries
+                  do (collect-needed-libraries
+                      (destructuring-bind (&key url preconditions)
+                          (info-of-javascript-library (first libraries))
+                        (pushnew `(,library ,url) needed-libraries :key #'first)
+                        (collect-needed-libraries preconditions))))))
+      (collect-needed-libraries libraries)
+      `(labels 
+           ((get-libraries-and-do-it ()
+              (,(build-symbol "get-" (caar needed-libraries))))
+              ,@(nreverse
+               (loop
+                  finally (print library-fetcher)
+                  for next = 'do-it then library-fetcher
+                  for (name url) in (nreverse needed-libraries)
+                  as library-fetcher = (build-symbol "get-" name)
+                  collect `(,library-fetcher ()
+                                             (chain $ (get-script ,url ,next)))))
+            (do-it () ,@body))
+         (get-libraries-and-do-it)))))
 
 (defpsmacro def-jquery-plugin (name (&rest args) &body body)
   ;; see http://docs.jquery.com/Plugins/Authoring#Getting_Started

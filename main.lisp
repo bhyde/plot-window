@@ -1,4 +1,4 @@
-(in-package "PLOT-WINDOW")
+(in-package #:plot-window)
 
 ;;;; Startup...
 
@@ -10,7 +10,7 @@
 ;;;; Incomming Message Handlers
 
 (define-json-message-handler page-log (message)
-  (log:info (websocket page-log) "~S" message))
+  (log:info '(websocket page-log) "~S" message))
 
 ;;;; Our Web Application, one main page.
 
@@ -21,7 +21,7 @@
 (define-javascript-library flot (jquery) "/flot/jquery.flot.js")
 
 (define-easy-handler (flot-ws :uri "/") ()
-  (with-my-page (s :title "Plot Window")
+  (with-my-page (s :title "Display Window")
     (add-javascript-libraries 'flot 'jquery-json 'graceful-web-socket)
     (with-script-in-header (s)
       (def-jquery-plugin revise-plot (plotting-instructions)
@@ -69,7 +69,13 @@
 
 ;;;; Finally, the whole point our plot function.
 
-(defun plot (&optional (data-points '((1 1) (2 2) (1 4))))
+;;; Note that you can tinker with this to make different styles.
+
+(defun plot (&optional (data-points (flet ((f (i n)
+                                             (/ (* i (sin i)) n)))
+                                      (loop
+                                         for i below 100 by .4
+                                         collect (list i (f i 100))))))
   (flet ((f (alist)
            ;; we need this since cl-json's heuristic for deciding what's an alist
            ;; and hence should become an object doesn't work for some of our needs.
@@ -94,4 +100,4 @@
    *last-websocket-client*))
 
 (defmacro ps-eval-in-client (&body parenscript-body) 
-  `(eval-in-client* '(progn ,@parenscript-body)))
+  `(ps-eval-in-client* '(progn ,@parenscript-body)))
