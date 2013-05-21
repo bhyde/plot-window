@@ -28,15 +28,13 @@
         (let ((series (@ plotting-instructions series))
               (details (@ plotting-instructions details)))
           (with-each-of-jquery-object (i x this)
-            (chain ($ x) (plot series details))))))
-    (ps-onready (s)
-      ;; Connect to the websocket, establish handlers, init plot.
-      (let ((ws (chain $ (graceful-web-socket (websocket-url)))))
-        (labels ((lg (msg)
+            (chain ($ x) (plot series details)))))
+      (let (ws)
+        (labels ((send-ws-msg (data)
+                   (chain ws (send (chain $ (to-J-S-O-N data)))))
+                 (lg (msg)
                    (send-ws-msg (create :type "page-log" :message msg))
                    (chain console (log msg)))
-                 (send-ws-msg (data)
-                   (chain ws (send (chain $ (to-J-S-O-N data)))))
                  (on-message (e)
                    (let* ((msg (chain $ (parse-j-s-o-n (@ e data))))
                           (target (@ msg target))
@@ -60,10 +58,19 @@
                                          (create :series scatter-plot))))
                    (lg "Ex1 is setup."))
                  (init-phase-2 (e)
+                   (setf (@ window bah ws) ws)
+                   (setf (@ ws onmessage) #'on-message)
+                   (setf (@ ws onerror) (lambda () (lg "ws error")))
                    (lg "Hello")
-                   (setf (chain ws onmessage) #'on-message)
-                   (init-scatter-plot)))
-          (setf (chain ws onopen) #'init-phase-2))))
+                   (init-scatter-plot))
+                 (start-up ()
+                   (setf ws (chain $ (graceful-web-socket (websocket-url))))
+                   (setf (chain ws onopen) #'init-phase-2)))
+          (setf (@ window bah)
+                (create 'lg lg
+                        'send-ws-messge send-ws-msg
+                        'start-up start-up)))))
+    (ps-onready (s) (funcall (@ window bah start-up)))
     (:div :id "ex1" :style (css-lite:inline-css `((width "600px") (height "350px"))))))
 
 
@@ -92,12 +99,99 @@
 
 ;;;; Part of an experiment...
 
-(defun ps-eval-in-client* (parenscript-form)
-  (log:debug '(websocket send) "eval: ~S" parenscript-form)
-  (send-json-message
+(defun send-global-eval (javascript-text &optional (client *last-websocket-client*))
+  (log:debug '(websocket send global-eval) "~S" javascript-text)
+  (send-json-message 
    `((:event . ,(symbol-to-js-string 'global-eval))
-     (:argument . ,(ps* `(funcall #'(lambda () ,parenscript-form)))))
-   *last-websocket-client*))
+     (:argument . ,javascript-text))
+   client))
 
-(defmacro ps-eval-in-client (&body parenscript-body) 
-  `(ps-eval-in-client* '(progn ,@parenscript-body)))
+(defmacro ps-eval-in-client* (&rest parenscript-forms)
+  `(send-global-eval (ps* ,@parenscript-forms)))
+
+(defmacro ps-eval-in-client (&body parenscript-forms)
+  `(send-global-eval (ps ,@parenscript-forms)))
+
+
+;;; Logging...
+
+(in-package #:log4cl)
+
+(defclass memory-appender (serialized-appender)
+  ((max :initform 500 :initarg :max-elements )
+   (count :initform 0)
+   (transcript :initform ()))
+  (:documentation "collects recent log messages"))
+
+(unless (boundp '.ndc-is-unbound.)
+  (defconstant .ndc-is-unbound. (make-symbol "NDC-IS-UNBOUND")))
+
+(defmethod appender-do-append ((this memory-appender)
+                               logger
+			       level
+                               log-func)
+  (with-slots (max count transcript layout) this
+    (when (<= max count)
+      (decf count 20)
+      (setf transcript (subseq transcript 0 (- max 21))))
+    (incf count)
+    (push
+     (list logger level
+           (if (boundp 'log4cl::*ndc-context*)
+               'log4cl::*ndc-context*
+               .ndc-is-unbound.)
+           (with-output-to-string (s)
+             (layout-to-stream layout s logger level log-func)))
+     transcript)))
+
+(defmethod clear-me ((this memory-appender))
+  (with-slots (count transcript) this
+    (setf count 0
+          transcript ())))
+
+(defmethod show ((this memory-appender) &key (classes t) (level :debug) (pattern "."))
+  (declare (ignore classes))
+  (flet ((id (logger)
+           (if (eq logger *root-logger*)
+               "+<root>"
+               (logger-category logger))))
+    (with-slots (transcript) this
+      (loop
+         with level-n = (make-log-level level)
+         for (logger level ndc text) in (reverse (subseq transcript 0 (min 50 (length transcript))))
+         when (<= level level-n)
+           do (let ((msg (format nil "~(~a~) ~d  ~A~:[~; ~S~]"
+                          (id logger) level text (eq ndc .ndc-is-unbound.) ndc)))
+                (when (cl-ppcre:scan pattern msg)
+                  (format t "~&~A" msg)))))))
+
+
+(defparameter *my-log* nil)
+
+(defun establish-my-logger ()
+  (assert (not *my-log*) () "Logger already established")
+  (setf *my-log* (make-instance 'memory-appender :max-elements 40))
+  (log4cl::add-appender-internal
+   (log4cl::get-logger-internal '() nil nil)
+   *my-log* nil))
+
+(defun show-log (&key (level :info) (classes t) (pattern "."))
+  (show *my-log* :level level :classes classes :pattern pattern))
+
+#+nil
+(defun outline-all-loggers ()
+  (let ((cnt 0))
+    (labels ((id (logger)
+               (if (eq logger *root-logger*)
+                   "+<ROOT>"
+                   (logger-category logger)))
+             (recure (logger d)
+               (incf cnt)
+               (format t "~&~VT~S" d (id logger))
+               (let ((kids (slot-value logger 'child-hash)))
+                 (when kids
+                   (loop 
+                      for c being each hash-value of kids
+                      do (recure c (+ 2 d)))))))
+      (recure *root-logger* 0)
+      cnt)))

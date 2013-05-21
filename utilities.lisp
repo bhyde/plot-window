@@ -82,15 +82,17 @@
         (:head (loop for str in (nreverse *header-fragments*) do (htm (str str))))
         (str body)))))
 
-(defvar *javascript-library-info* (make-hash-table))
-
-(defun info-of-javascript-library (javascript-library)
-  (or (gethash javascript-library *javascript-library-info*)
-      (error "Unknown Javascript library ~A" javascript-library)))
-
 (eval-when (:compile-toplevel :load-toplevel :execute)
+
+  (defvar *javascript-library-info* (make-hash-table))
+
+  (defun info-of-javascript-library (javascript-library)
+    (or (gethash javascript-library *javascript-library-info*)
+        (error "Unknown Javascript library ~A" javascript-library)))
+
   (defmacro define-javascript-library (name (&rest preconditions) url)
-    `(setf (gethash ',name *javascript-library-info*) '(:url ,url :preconditions ,preconditions))))
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
+       (setf (gethash ',name *javascript-library-info*) '(:url ,url :preconditions ,preconditions)))))
 
 (define-javascript-library jquery () "//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js")
 
@@ -104,7 +106,7 @@
          (setf (page-property java-library) t)
          (with-header-fragment (stream)
            (:script :type "text/javascript"
-                    :src (str (getf library-info :url)))))))
+                    :src (getf library-info :url))))))
 
 (defmacro with-script-in-header ((stream) &body parenscript-body)
   `(with-header-fragment (,stream)
@@ -118,30 +120,41 @@
      (with-script-in-header (,stream)
        ($ (lambda () ,@parenscript)))))
 
-(defpsmacro with-js-libraries ((&rest libraries) &body body)
+(defpsmacro lg (obj)
+  `(chain console (log ,obj)))
+
+(defpsmacro with-delay ((milliseconds) &body body)
+  `(set-timeout (lambda () ,@body) ,milliseconds))
+
+(defun get-needed-files (libraries)
   (let (needed-libraries)
     (labels ((collect-needed-libraries (libraries)
                (loop 
                   for library in libraries
-                  do (collect-needed-libraries
-                      (destructuring-bind (&key url preconditions)
-                          (info-of-javascript-library (first libraries))
-                        (pushnew `(,library ,url) needed-libraries :key #'first)
-                        (collect-needed-libraries preconditions))))))
-      (collect-needed-libraries libraries)
-      `(labels 
-           ((get-libraries-and-do-it ()
-              (,(build-symbol "get-" (caar needed-libraries))))
-              ,@(nreverse
-               (loop
-                  finally (print library-fetcher)
-                  for next = 'do-it then library-fetcher
-                  for (name url) in (nreverse needed-libraries)
-                  as library-fetcher = (build-symbol "get-" name)
-                  collect `(,library-fetcher ()
-                                             (chain $ (get-script ,url ,next)))))
-            (do-it () ,@body))
-         (get-libraries-and-do-it)))))
+                  do (destructuring-bind (&key url preconditions)
+                         (info-of-javascript-library library)
+                       (pushnew (list library url)
+                                needed-libraries :key #'first)
+                       (collect-needed-libraries preconditions)))))
+      (collect-needed-libraries libraries))
+    needed-libraries))
+
+(defpsmacro with-js-libraries ((&rest libraries) &body body)
+  (let ((needed-libraries (get-needed-files libraries)))
+    `(labels 
+         ((get-libraries-and-do-it ()
+            (,(build-symbol "get-" (caar needed-libraries))))
+          ,@(nreverse
+             (loop
+                finally (print library-fetcher)
+                for next = 'do-it then library-fetcher
+                for (name url) in (nreverse needed-libraries)
+                as library-fetcher = (build-symbol "get-" name)
+                collect `(,library-fetcher ()
+                                           (lg ,url)
+                                           (chain $ (get-script ,url ,next)))))
+          (do-it () ,@body))
+       (get-libraries-and-do-it))))
 
 (defpsmacro def-jquery-plugin (name (&rest args) &body body)
   ;; see http://docs.jquery.com/Plugins/Authoring#Getting_Started
