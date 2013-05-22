@@ -7,5 +7,6 @@
                plot-window-syntax-highlighter 
                plot-window-nicedit
                ;; plot-window-timeline
-               plot-window-j-query-color-box)
+               plot-window-j-query-color-box
+               plot-window-d3js)
   :components ((:file "demo")))

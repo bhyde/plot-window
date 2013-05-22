@@ -22,7 +22,7 @@
 
 (define-easy-handler (flot-ws :uri "/") ()
   (with-my-page (s :title "Display Window")
-    (add-javascript-libraries 'flot 'jquery-json 'graceful-web-socket)
+    (add-javascript-libraries 'jquery-json 'graceful-web-socket 'flot)
     (with-script-in-header (s)
       (def-jquery-plugin revise-plot (plotting-instructions)
         (let ((series (@ plotting-instructions series))
@@ -99,8 +99,11 @@
 
 ;;;; Part of an experiment...
 
+(defvar *last-global-eval* nil)
+
 (defun send-global-eval (javascript-text &optional (client *last-websocket-client*))
   (log:debug '(websocket send global-eval) "~S" javascript-text)
+  (setf *last-global-eval* javascript-text)
   (send-json-message 
    `((:event . ,(symbol-to-js-string 'global-eval))
      (:argument . ,javascript-text))

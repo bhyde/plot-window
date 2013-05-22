@@ -146,7 +146,7 @@
             (,(build-symbol "get-" (caar needed-libraries))))
           ,@(nreverse
              (loop
-                finally (print library-fetcher)
+                ; finally (print library-fetcher)
                 for next = 'do-it then library-fetcher
                 for (name url) in (nreverse needed-libraries)
                 as library-fetcher = (build-symbol "get-" name)
