@@ -1,9 +1,12 @@
 (in-package #:plot-window)
 
 (define-javascript-library syntax-highlighter-core () 
-  "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shCore.js")
+  "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shCore.js"
+  (boundp -syntax-highlighter))
+
 (define-javascript-library syntax-javascript-highlighter (syntax-highlighter-core) 
-  "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shBrushJScript.js") 
+  "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shBrushJScript.js"
+  (boundp (@ -syntax-highlighter brushes -j-script)))
 
 ;(define-css-library syntax-highlighter-default-core ()
 ;  "http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shCore.css")

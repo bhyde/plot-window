@@ -90,11 +90,14 @@
     (or (gethash javascript-library *javascript-library-info*)
         (error "Unknown Javascript library ~A" javascript-library)))
 
-  (defmacro define-javascript-library (name (&rest preconditions) url)
+  (defmacro define-javascript-library (name (&rest preconditions) url present-p)
     `(eval-when (:compile-toplevel :load-toplevel :execute)
-       (setf (gethash ',name *javascript-library-info*) '(:url ,url :preconditions ,preconditions)))))
+       (setf (gethash ',name *javascript-library-info*) '(:url ,url :preconditions ,preconditions :present-p ,present-p)))))
 
-(define-javascript-library jquery () "//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js")
+(define-javascript-library jquery () 
+  "//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"
+  (boundp j-query))
+
 
 (defun add-javascript-libraries (&rest java-libraries)
   (loop
@@ -120,6 +123,9 @@
      (with-script-in-header (,stream)
        ($ (lambda () ,@parenscript)))))
 
+(defpsmacro boundp (sym)
+  `(not (string= (typeof ,sym) "undefined")))
+
 (defpsmacro lg (obj)
   `(chain console (log ,obj)))
 
@@ -131,9 +137,9 @@
     (labels ((collect-needed-libraries (libraries)
                (loop 
                   for library in libraries
-                  do (destructuring-bind (&key url preconditions)
+                  do (destructuring-bind (&key url preconditions present-p)
                          (info-of-javascript-library library)
-                       (pushnew (list library url)
+                       (pushnew (list library url present-p)
                                 needed-libraries :key #'first)
                        (collect-needed-libraries preconditions)))))
       (collect-needed-libraries libraries))
@@ -148,11 +154,14 @@
              (loop
                 ; finally (print library-fetcher)
                 for next = 'do-it then library-fetcher
-                for (name url) in (nreverse needed-libraries)
+                for (name url present-p) in (nreverse needed-libraries)
                 as library-fetcher = (build-symbol "get-" name)
                 collect `(,library-fetcher ()
-                                           (lg ,url)
-                                           (chain $ (get-script ,url ,next)))))
+                                           (cond
+                                             (,present-p (funcall ,next))
+                                             (t
+                                              (lg ,url)
+                                              (chain $ (get-script ,url ,next)))))))
           (do-it () ,@body))
        (get-libraries-and-do-it))))
 

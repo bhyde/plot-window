@@ -8,5 +8,6 @@
                plot-window-nicedit
                ;; plot-window-timeline
                plot-window-j-query-color-box
-               plot-window-d3js)
+               plot-window-d3js
+               plot-window-flot)
   :components ((:file "demo")))

@@ -14,5 +14,6 @@
                )
   :components ((:file "packages")
                (:file "utilities")
+               (:file "log4cl-memory-appender")
                (:file "servers")
                (:file "main")))

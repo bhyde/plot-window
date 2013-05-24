@@ -1,6 +1,8 @@
 (in-package #:plot-window)
 
-(define-javascript-library nicedit () "http://js.nicedit.com/nicEdit-latest.js")
+(define-javascript-library nicedit () 
+  "http://js.nicedit.com/nicEdit-latest.js"
+  (boundp nic-editor))
 
 (defun nicedit-example1 ()
   (ps-eval-in-client

@@ -14,16 +14,25 @@
 
 ;;;; Our Web Application, one main page.
 
-(define-javascript-library jquery-json (jquery) "/jquery.json-2.4.js")
+(define-javascript-library jquery-json (jquery) 
+  "/jquery.json-2.4.js"
+  (boundp (@ j-query to-j-s-o-n)))
 
-(define-javascript-library graceful-web-socket (jquery) "/jquery.gracefulWebSocket.js")
 
-(define-javascript-library flot (jquery) "/flot/jquery.flot.js")
+(define-javascript-library graceful-web-socket (jquery)
+  "/jquery.gracefulWebSocket.js"
+  (boundp (@ j-query graceful-web-socket)))
+
+#+nil
+(define-javascript-library flot (jquery) 
+  "/flot/jquery.flot.js"
+  (@ j-query plot))
 
 (define-easy-handler (flot-ws :uri "/") ()
   (with-my-page (s :title "Display Window")
-    (add-javascript-libraries 'jquery-json 'graceful-web-socket 'flot)
+    (add-javascript-libraries 'jquery-json 'graceful-web-socket)
     (with-script-in-header (s)
+      #+nil
       (def-jquery-plugin revise-plot (plotting-instructions)
         (let ((series (@ plotting-instructions series))
               (details (@ plotting-instructions details)))
@@ -47,8 +56,10 @@
                                         msg)))
                      (lg (concatenate 'string "Got: " (chain -J-S-O-N (stringify msg))))
                      (funcall (aref selection event) argument)))
+                 #+nil
                  (setup-plot (instructions)
                    (chain ($ "#ex1") (plot (@ instructions series) (@ instructions details))))
+                 #+nil
                  (init-scatter-plot ()
                    (let ((scatter-plot (create :lines (create :show nil) :points (create show t))))
                      (setup-plot (create :series
@@ -62,6 +73,7 @@
                    (setf (@ ws onmessage) #'on-message)
                    (setf (@ ws onerror) (lambda () (lg "ws error")))
                    (lg "Hello")
+                   #+nil
                    (init-scatter-plot))
                  (start-up ()
                    (setf ws (chain $ (graceful-web-socket (websocket-url))))
@@ -71,13 +83,16 @@
                         'send-ws-messge send-ws-msg
                         'start-up start-up)))))
     (ps-onready (s) (funcall (@ window bah start-up)))
-    (:div :id "ex1" :style (css-lite:inline-css `((width "600px") (height "350px"))))))
+
+    (:div :id "ex1" :style (css-lite:inline-css `((width "600px") (height "350px")))
+          "Sir!  Your humble window awakes your command.")))
 
 
 ;;;; Finally, the whole point our plot function.
 
 ;;; Note that you can tinker with this to make different styles.
 
+#+nil
 (defun plot (&optional (data-points (flet ((f (i n)
                                              (/ (* i (sin i)) n)))
                                       (loop
@@ -97,7 +112,7 @@
   nil)
 
 
-;;;; Part of an experiment...
+;;;; Sending commands to the window.
 
 (defvar *last-global-eval* nil)
 
@@ -113,88 +128,13 @@
   `(send-global-eval (ps* ,@parenscript-forms)))
 
 (defmacro ps-eval-in-client (&body parenscript-forms)
-  `(send-global-eval (ps ,@parenscript-forms)))
+  `(send-global-eval
+    (ps
+      (setf (@ bah last-result)
+            (try (progn ,@parenscript-forms)
+                 (:catch (e)
+                   (funcall-bah lg
+                                (concatenate 'string "Error: " (@ e message)))
+                   e))))))
 
 
-;;; Logging...
-
-(in-package #:log4cl)
-
-(defclass memory-appender (serialized-appender)
-  ((max :initform 500 :initarg :max-elements )
-   (count :initform 0)
-   (transcript :initform ()))
-  (:documentation "collects recent log messages"))
-
-(unless (boundp '.ndc-is-unbound.)
-  (defconstant .ndc-is-unbound. (make-symbol "NDC-IS-UNBOUND")))
-
-(defmethod appender-do-append ((this memory-appender)
-                               logger
-			       level
-                               log-func)
-  (with-slots (max count transcript layout) this
-    (when (<= max count)
-      (decf count 20)
-      (setf transcript (subseq transcript 0 (- max 21))))
-    (incf count)
-    (push
-     (list logger level
-           (if (boundp 'log4cl::*ndc-context*)
-               'log4cl::*ndc-context*
-               .ndc-is-unbound.)
-           (with-output-to-string (s)
-             (layout-to-stream layout s logger level log-func)))
-     transcript)))
-
-(defmethod clear-me ((this memory-appender))
-  (with-slots (count transcript) this
-    (setf count 0
-          transcript ())))
-
-(defmethod show ((this memory-appender) &key (classes t) (level :debug) (pattern "."))
-  (declare (ignore classes))
-  (flet ((id (logger)
-           (if (eq logger *root-logger*)
-               "+<root>"
-               (logger-category logger))))
-    (with-slots (transcript) this
-      (loop
-         with level-n = (make-log-level level)
-         for (logger level ndc text) in (reverse (subseq transcript 0 (min 50 (length transcript))))
-         when (<= level level-n)
-           do (let ((msg (format nil "~(~a~) ~d  ~A~:[~; ~S~]"
-                          (id logger) level text (eq ndc .ndc-is-unbound.) ndc)))
-                (when (cl-ppcre:scan pattern msg)
-                  (format t "~&~A" msg)))))))
-
-
-(defparameter *my-log* nil)
-
-(defun establish-my-logger ()
-  (assert (not *my-log*) () "Logger already established")
-  (setf *my-log* (make-instance 'memory-appender :max-elements 40))
-  (log4cl::add-appender-internal
-   (log4cl::get-logger-internal '() nil nil)
-   *my-log* nil))
-
-(defun show-log (&key (level :info) (classes t) (pattern "."))
-  (show *my-log* :level level :classes classes :pattern pattern))
-
-#+nil
-(defun outline-all-loggers ()
-  (let ((cnt 0))
-    (labels ((id (logger)
-               (if (eq logger *root-logger*)
-                   "+<ROOT>"
-                   (logger-category logger)))
-             (recure (logger d)
-               (incf cnt)
-               (format t "~&~VT~S" d (id logger))
-               (let ((kids (slot-value logger 'child-hash)))
-                 (when kids
-                   (loop 
-                      for c being each hash-value of kids
-                      do (recure c (+ 2 d)))))))
-      (recure *root-logger* 0)
-      cnt)))

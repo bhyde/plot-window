@@ -1,9 +1,10 @@
 (in-package #:plot-window)
 
-(define-javascript-library jquery-color (jquery) 
+(define-javascript-library jquery-color (jquery)
   "http://code.jquery.com/color/jquery.color-2.1.0.min.js"
   ; "https://raw.github.com/jquery/jquery-color/master/jquery.color.js"
-  )
+  (boundp (@ j-query -color)))
+
 
 (defun j-query-color-box-example ()
   (ps-eval-in-client

@@ -1,16 +1,23 @@
 (in-package #:plot-window)
 
 (define-javascript-library -open-layers ()
-  "http://openlayers.org/api/OpenLayers.js")
+  "http://openlayers.org/api/OpenLayers.js"
+  (boundp -open-layers))
 
 (define-javascript-library mapstraction-top ()
-  "https://raw.github.com/mapstraction/mxn/master/source/mxn.js")
+  "https://raw.github.com/mapstraction/mxn/master/source/mxn.js"
+  (boundp mxn))
 
 (define-javascript-library mapstraction-core (mapstraction-top)
-  "https://raw.github.com/mapstraction/mxn/master/source/mxn.core.js")
+  "https://raw.github.com/mapstraction/mxn/master/source/mxn.core.js"
+  (boundp (@ mxn -lat-lon-point)))
 
 (define-javascript-library mapstraction-openlayers (-open-layers mapstraction-core)
-  "https://raw.github.com/mapstraction/mxn/master/source/mxn.openlayers.core.js")
+  "https://raw.github.com/mapstraction/mxn/master/source/mxn.openlayers.core.js"
+  (loop
+     for p in (chain mxn util (get-available-providers))
+     when (string= "openlayers" p) do (return t)))
+
 
 (defun mapabstraction-example ()
   (ps-eval-in-client
