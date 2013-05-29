@@ -1,5 +1,6 @@
 (in-package #:plot-window)
 
+
 (defun build-symbol (&rest bits)
   (intern (format nil "~@:(~{~A~}~)" bits)))
 
@@ -12,6 +13,16 @@
               for var in vars
               collect `(,var (cdr (assoc ,(build-keyword var) ,alist))))
        ,@body)))
+
+(defparameter *random-texts*
+  #("apple" "carrot" "tomato" "dog" "fish" "piano" "trombone" "fire" "water"))
+
+(defun random-elt (seq)
+  (elt seq (random (length seq))))
+
+(defpsmacro random-paragraph ()
+  (let ((text (random-elt *random-texts*)))
+    (interpolate "{<p>$(text)</p>}")))
 
 ;;;; Some CSS defaults
 
@@ -177,3 +188,122 @@
 
 (defpsmacro with-each-of-jquery-object ((index element jquery-object) &body body)
   `(chain ,jquery-object (each (lambda (,index ,element) ,@body))))
+
+(defpsmacro defun-bah (name args &body body)
+  `(flet ((,name ,args ,@body))
+     (setf (@ window bah ,name) ,name)))
+
+(defpsmacro funcall-bah (name &rest args)
+  `(funcall (@ window bah ,name) ,@args))
+
+(defun interp% (str)
+  "Avoid the need to use a unique read table."
+  (assert (stringp str))
+  (with-input-from-string (s str)
+    (cl-interpol::interpol-reader s #\? nil)))
+
+(defmacro interpolate (str)
+  (interp% str))
+
+(defpsmacro interpolate (str)
+  (interp% str))
+
+(defpsmacro with-output-to-string ((stream) &body body)
+  "Converts some of what cl-interpol generates into javascript."
+  (flet ((transform (form)
+           (optima:ematch form
+             ((optima:guard (list 'write-string x s) (eq s stream))
+              `,x)
+             ((optima:guard (list 'princ x s) (eq s stream))
+              `(-String ,x)))))
+    `(chain (array ,@(mapcar #'transform body))
+            (join ""))))
+
+(defpsmacro string-upcase (x)
+  `(chain ,x (to-upper-case)))
+
+(defpsmacro string-downcase (x)
+  `(chain ,x (to-lower-case)))
+
+(defpsmacro plusp (x)
+  `(< 0 ,x))
+
+(defpsmacro char-downcase (x) `(chain ,x (to-lower-case)))
+
+(defpsmacro char-upcase (x) `(chain ,x (to-upper-case)))
+
+(defpsmacro char (str x) `(aref ,str ,x))
+
+(defpsmacro cprogn ((finally) &body stms)
+  (flet ((replace-continuation (continuation stm)
+           (let ((got-one nil))
+             (labels ((recure (form)
+                        (cond
+                          ((eq 'next form) 
+                           (setf got-one t)
+                           continuation)
+                          ((listp form)
+                           (mapcar #'recure form))
+                          (t form))))
+               (prog1
+                   (recure stm)
+                 (unless got-one (error "Did not find NEXT in ~S" stm)))))))
+    (let* ((base (gensym))
+           (frst (build-symbol base "-0")))
+      `(labels (,@(loop
+                     as nm = frst then next-nm
+                     for i from 1
+                     as (stm . more) on stms
+                     as next-nm = (if more (build-symbol base i) finally)
+                     collect `(,nm () ,(replace-continuation next-nm stm) undefined)))
+         (,frst)))))
+
+(defpsmacro new-element ((how where &optional continuation) &body element-maker)
+  `(flet ((continuation () ,(if continuation `(funcall ,continuation) nil)))
+     (let* ((new-element ($ (progn ,@element-maker)))
+            (place ,where)
+            (loc ($ place)))
+       (unless (= 1 (length loc))
+         (throw
+             (new (-error 
+                   (interpolate
+                    "{Selector \"$[place]\" found $[(length loc)] elements, must result in exactly one.}")))))
+       (case ,how
+         (:before
+          (chain new-element (hide))
+          (chain loc (before new-element))
+          (chain new-element (slide-down 1000 continuation)))
+         (:after
+          (chain new-element (hide))
+          (chain loc (after new-element))
+          (chain new-element (slide-down 1000 continuation)))
+         (:append
+          (chain new-element (hide) (fade-in 1000 continuation))
+          (chain loc (append new-element)))
+         (:prepend
+          (chain new-element (hide))
+          (chain loc (prepend new-element))
+          (chain new-element (slide-down 1000 continuation)))
+         (:replace-content
+          (cprogn (continuation)
+                  (progn
+                    (chain ($ (chain loc (children))) (wrap-all "<div/>"))
+                    (chain loc (children) (fade-out 400 next)))
+                  (progn 
+                    (chain loc (empty))
+                    (chain new-element (hide) (fade-in 400 next))
+                    (chain loc (prepend new-element)))))))))
+
+(defun test-new-element ()
+  (ps-eval-in-client
+    (cprogn ((lambda ()))
+      (new-element (:replace-content :body next) "<p id='xx'>Yeah</p>")
+      (new-element (:append :body next)          "<p>Append 1</p>")
+      (new-element (:append :body next)          "<p>Append 2</p>")
+      (new-element (:prepend :body next)         "<p>Prepend 1</p>")
+      (new-element (:prepend :body next)         "<p>Prepend 2</p>")
+      (new-element (:before "#xx" next)          "<p id='z'>before 1</p>")
+      (new-element (:after "#xx" next)           "<p>after 1</p>")
+      (new-element (:before "#xx" next)          "<p>before 2</p>")
+      (new-element (:after "#xx" next)           "<p>after 2</p>")
+      )))

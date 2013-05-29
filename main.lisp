@@ -133,8 +133,8 @@
       (setf (@ bah last-result)
             (try (progn ,@parenscript-forms)
                  (:catch (e)
-                   (funcall-bah lg
-                                (concatenate 'string "Error: " (@ e message)))
+                   (lg (interpolate "{Error: ${(@ e message)}}"))
+;                                (concatenate 'string "Error: " (@ e message)))
                    e))))))
 
 

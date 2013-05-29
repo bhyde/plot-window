@@ -54,12 +54,7 @@
                  (attr :cy #'dy)))))))
 
 
-(defpsmacro defun-bah (name args &body body)
-  `(flet ((,name ,args ,@body))
-     (setf (@ window bah ,name) ,name)))
 
-(defpsmacro funcall-bah (name &rest args)
-  `(funcall (@ window bah ,name) ,@args))
 
 #+nil ;; men at work...
 (defun d3js-example-1 ()
