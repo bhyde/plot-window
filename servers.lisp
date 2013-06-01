@@ -1,7 +1,7 @@
 (in-package "PLOT-WINDOW")
 
 (defvar cl-user::*root*
-  (if (string= (ccl:getenv "HOME") "/app")
+  (if (string= (uiop:getenv "HOME") "/app")
       "/app/"
       (namestring
        (make-pathname :directory
