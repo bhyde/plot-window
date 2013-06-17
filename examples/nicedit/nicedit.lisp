@@ -1,6 +1,6 @@
 (in-package #:plot-window)
 
-(declare-javascript-library nicedit () 
+(declare-javascript-library nicedit ()
   :url "http://js.nicedit.com/nicEdit-latest.js"
   :loaded-p (boundp nic-editor))
 
