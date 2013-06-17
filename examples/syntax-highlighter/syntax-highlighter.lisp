@@ -1,12 +1,12 @@
 (in-package #:plot-window)
 
-(define-javascript-library syntax-highlighter-core () 
-  "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shCore.js"
-  (boundp -syntax-highlighter))
+(declare-javascript-library syntax-highlighter-core () 
+  :url "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shCore.js"
+  :loaded-p (boundp -syntax-highlighter))
 
-(define-javascript-library syntax-javascript-highlighter (syntax-highlighter-core) 
-  "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shBrushJScript.js"
-  (boundp (@ -syntax-highlighter brushes -j-script)))
+(declare-javascript-library syntax-javascript-highlighter (syntax-highlighter-core) 
+  :url "http://agorbatchev.typepad.com/pub/sh/3_0_83/scripts/shBrushJScript.js"
+  :loaded-p (boundp (@ -syntax-highlighter brushes -j-script)))
 
 ;(define-css-library syntax-highlighter-default-core ()
 ;  "http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shCore.css")
@@ -50,7 +50,7 @@
                (f)
                (with-css ("http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shCore.css")
                  (with-css ("http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shThemeDefault.css")
-                   (with-js-libraries (syntax-javascript-highlighter)
+                   (with-javascript-modules (syntax-javascript-highlighter)
                      (f))))))))
     (ps-eval-in-client
       (chain ($ :body) (empty))
@@ -65,7 +65,7 @@
             (f)
             (with-css ("http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shCore.css")
               (with-css ("http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shThemeDefault.css")
-                (with-js-libraries (syntax-javascript-highlighter)
+                (with-javascript-modules (syntax-javascript-highlighter)
                   (f)))))))))
 
 

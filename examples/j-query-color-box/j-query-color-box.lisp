@@ -1,9 +1,9 @@
 (in-package #:plot-window)
 
-(define-javascript-library jquery-color (jquery)
-  "http://code.jquery.com/color/jquery.color-2.1.0.min.js"
+(declare-javascript-library jquery-color (jquery)
+  :url "http://code.jquery.com/color/jquery.color-2.1.0.min.js"
   ; "https://raw.github.com/jquery/jquery-color/master/jquery.color.js"
-  (boundp (@ j-query -color)))
+  :loaded-p (boundp (@ j-query -color)))
 
 
 (defun j-query-color-box-example ()
@@ -23,7 +23,7 @@
              (chain ($ :body)
                     (append "<div class='block' style='margin:10px;width:200px;height:100px;border:1px dotted;background-color:snow'>"))))
       (setup)
-      (with-js-libraries (jquery-color)
+      (with-javascript-modules (jquery-color)
         (chain ($ "#go")
                (click colorful))))))
 

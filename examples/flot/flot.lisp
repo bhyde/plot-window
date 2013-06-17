@@ -1,39 +1,48 @@
 
-(define-javascript-library flot (jquery) 
-  "/flot/jquery.flot.js"
-  (boundp (@ j-query plot)))
+(declare-javascript-library flot (jquery) 
+  :url "/flot/jquery.flot.js"
+  :loaded-p (boundp (@ j-query plot)))
 
+
+(define-javascript-code-module my-flot ()
+  :where dw
+  :loaded-p (boundp (@ dw my-flot))
+  :requires (flot))
+
+(defun-javascript (my-flot setup-plot) (instructions)
+  (chain ($ "#ex1")
+         (plot (@ instructions series)
+               (@ instructions details))))
+
+(defun-javascript (my-flot init-scatter-plot) ()
+  (flet ((d1 ()
+           (create :label "up"
+                   :data (loop for i from 1 to 10
+                            collect (list i i))))
+         (d2 ()
+           (create :label "random"
+                   :data (loop for i from 1 to 10
+                            collect (list i (1+ (random 10)))))))
+    (setup-plot (create 
+                 :series (list (d1) (d2))
+                 :details 
+                 (create :series
+                         (create :lines (create :show nil)
+                                 :points (create show t)))))))
+
+(defun-javascript (my-flot initialize) ()
+  (def-jquery-plugin revise-plot (plotting-instructions)
+    (let ((series (@ plotting-instructions series))
+          (details (@ plotting-instructions details)))
+      (with-each-of-jquery-object (i x this)
+        (chain ($ x) (plot series details))))))
 
 (defun flot-example-1 ()
   (ps-eval-in-client
-    (with-js-libraries (flot)
-      (def-jquery-plugin revise-plot (plotting-instructions)
-        (let ((series (@ plotting-instructions series))
-              (details (@ plotting-instructions details)))
-          (with-each-of-jquery-object (i x this)
-            (chain ($ x) (plot series details)))))
-      (defun-bah setup-plot (instructions)
-        (chain ($ "#ex1")
-               (plot (@ instructions series)
-                     (@ instructions details))))
-      (defun-bah init-scatter-plot ()
-        (flet ((d1 ()
-                 (create :label "up"
-                         :data (loop for i from 1 to 10
-                                  collect (list i i))))
-               (d2 ()
-                 (create :label "random"
-                         :data (loop for i from 1 to 10
-                                  collect (list i (1+ (random 10)))))))
-          (setup-plot (create 
-                            :series (list (d1) (d2))
-                            :details 
-                            (create :series
-                                    (create :lines (create :show nil)
-                                            :points (create show t)))))))
+    (with-javascript-modules (my-flot)
       (chain ($ :body) (empty))
       (chain ($ :body) (append "<div>") (attr :id "ex1"))
-      (funcall-bah init-scatter-plot))))
+      ((@ dw my-flot init-scatter-plot)))))
 
 
 (defun plot (&optional (data-points (flet ((f (i n)
@@ -48,8 +57,11 @@
     (send-json-message
      `((:target . "#ex1")
        (:event . ,(symbol-to-js-string 'revise-plot))
-       (:series . (,data-points))
-       (:details . ((:points . ,(f '((:show . t) (:radius . 2) (:fill-color . 3))))
-                    (:lines . ,(f '((:show . t) (:line-width . 1) (:fill-color . 4)))))))
+       (:series . (,(f `((:data . ,data-points)
+                        ))))
+       (:details . (#+nil (:points . ,(f '((:show . t) (:radius . 5) (:fill-color . 3))))
+                    #+nil (:lines . ,(f '((:show . t) (:line-width . 1) (:fill-color . 4))))
+                    (:xaxes . (,(f '((:ticks . 4)))))
+                    (:yaxes . (,(f '((:ticks . 4))))))))
      *last-websocket-client*))
   nil)

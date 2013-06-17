@@ -1,18 +1,18 @@
 (in-package #:plot-window)
 
-(define-javascript-library d3js () 
-  "http://d3js.org/d3.v3.min.js"
-  (boundp d3))
+(declare-javascript-library d3js ()
+  :url "http://d3js.org/d3.v3.min.js"
+  :loaded-p (boundp d3))
 
 (defun d3js-example-1 ()
   (ps-eval-in-client
-    (with-js-libraries (d3js)
+    (with-javascript-modules (d3js)
       (chain ($ :body) (empty)) ;; clear the screen
       (chain ($ :body)          ;; add a svg panel
              (append "<svg>"))
       (chain d3 (select :svg) (attr :width 300) (attr :height 200))
       (flet ((sin-wave (amplitude)
-               (loop for i from 1 to 40 
+               (loop for i from 1 to 40
                   collect (create :x i
                                   :y (* amplitude (sin (/ i 2)))))))
 
@@ -29,7 +29,7 @@
                         (select-all :circle)
                         (data (sin-wave 10)))))
           (flet ((f (d) (random 20))) ;; points in a pile
-            (chain x 
+            (chain x
                    (enter)
                    (append :circle)
                    (attr :r 3)
@@ -64,16 +64,17 @@
       (defun-bah place-d3js (where how name)
         (chain ($ where) (empty))
         (let ((x (chain ($ where)
-                        (append 
-                         ($ "<svg>" (create :id name :width 300 :height 200))))))
-          (chain d3 (select 
+                        (append
+                         ($ "<svg>"
+                            (create :id name :width 300 :height 200))))))
+          (chain d3 (select
                      (funcall (@ document get-Element-By-Id) name))
                  ; (attr :width 300) (attr :height 200)
                  )))
 
       (defun-bah d3js-example-1 (name)
         (flet ((sin-wave (amplitude)
-                 (loop for i from 1 to 40 
+                 (loop for i from 1 to 40
                     collect (create :x i
                                     :y (* amplitude (sin (/ i 2)))))))
 
@@ -91,7 +92,7 @@
                           (select-all :circle)
                           (data (sin-wave 10)))))
             (flet ((f (d) (random 20))) ;; points in a pile
-              (chain x 
+              (chain x
                      (enter)
                      (append :circle)
                      (attr (create :r 3 :fill :lightgray
