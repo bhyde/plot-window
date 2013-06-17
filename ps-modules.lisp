@@ -58,7 +58,7 @@
     (format t "~&~s ~s ~a ~s" name requires (url m) loaded-p)))
 
 (defmacro declare-javascript-library (name (&rest requires) &key url loaded-p)
-  `(progn
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-instance 'javascript-library
                     :name ',name
                     :requires ',requires
@@ -81,7 +81,7 @@
 
 (defmacro define-javascript-code-module (name () &key where requires loaded-p)
   (assert (symbolp name))
-  `(progn
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (setf (module-info ',name)
            (make-instance 'javascript-code-module
                           :name ',name
@@ -117,7 +117,7 @@
   ((args :initarg :args :reader args)))
 
 (defmacro defun-javascript ((module-name function-name) (&rest args) &body body)
-  `(progn
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-instance 'javascript-function
                     :name ',function-name
                     :module (module-info ',module-name)
@@ -129,7 +129,7 @@
   ())
 
 (defmacro defvar-javascript ((module-name variable-name) inital-value)
-  `(progn
+  `(eval-when (:compile-toplevel :load-toplevel :execute)
      (make-instance 'javascript-variable
                     :name ',variable-name
                     :module (module-info ',module-name)

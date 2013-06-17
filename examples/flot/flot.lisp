@@ -1,8 +1,8 @@
+(in-package #:plot-window)
 
 (declare-javascript-library flot (jquery) 
   :url "/flot/jquery.flot.js"
   :loaded-p (boundp (@ j-query plot)))
-
 
 (define-javascript-code-module my-flot ()
   :where dw
