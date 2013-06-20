@@ -59,18 +59,7 @@
                  (chain new-element (hide) (fade-in 400 next))
                  (chain loc (prepend new-element))))))))
 
-
-(defvar-javascript (dw ws) (let ((x (chain $ (graceful-web-socket (websocket-url)))))
-                             (setf (chain x onopen) #'init-phase-2)
-                             x))
-
-(defun-javascript (dw init-phase-2) (e)
-  (setf (@ ws onmessage) #'on-message)
-  (setf (@ ws onerror) (lambda () (lg "ws error")))
-  (lg "Hello"))
-
-(defun-javascript (dw send-ws-message) (data)
-  (chain ws (send (chain $ (to-J-S-O-N data)))))
+(defvar-javascript (dw ws) 1)
 
 (defun-javascript (dw on-message) (e)
   (let* ((msg (chain $ (parse-j-s-o-n (@ e data))))
@@ -84,3 +73,37 @@
                        msg)))
     (lg (concatenate 'string "Got: " (chain -J-S-O-N (stringify msg))))
     (funcall (aref selection event) argument)))
+
+(defun-javascript (dw initialize) ()
+
+;;; establish dw.ws
+  (let  ((x (chain $ (graceful-web-socket (websocket-url)))))
+    (flet ((ws-error (e)
+             (chain console (log "ws hd an error.")))
+           (ws-open (e)
+             ;; This next line sets *last-websocket-client* over
+             ;; on the lisp side.  This should be done in a more
+             ;; fastidious manner.
+             (lg "websocket has opened")))
+      (setf (@ dw ws) x)
+      (setf (@ x onerror)   #'ws-error)
+      (setf (@ x onopen)    #'ws-open)
+      (setf (@ x onmessage) #'on-message)))
+
+  (chain console (log "dw module has initialized")))
+
+(defun-javascript (dw send-ws-message) (data)
+  (cond
+    ((and (boundp (@ this dw))
+          (boundp (@ dw ws))
+          (eql (typeof (@ dw ws)) :object)
+          (not (eql null (@ dw ws))))
+     (cond
+       ((eql (@ dw ws ready-state) 1)
+        (chain dw ws (send (chain $ (to-J-S-O-N data)))))
+       (t
+        (chain console (log "dw.ws is not open")))))
+    (t
+     (chain console (log "dw.ws is unavailable")))))
+
+

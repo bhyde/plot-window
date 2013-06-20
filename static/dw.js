@@ -1,6 +1,5 @@
 // Do not edit, generated from parenscript.
 window.dw = (function () {
-    var x;
     var dw = this;
     var lg = function (msg) {
         sendWsMessage({ 'type' : 'page-log', 'message' : msg });
@@ -48,16 +47,6 @@ window.dw = (function () {
             return _c20();
         };
     };
-    var initPhase2 = function (e) {
-        ws.onmessage = onMessage;
-        ws.onerror = function () {
-            return lg('ws error');
-        };
-        return lg('Hello');
-    };
-    var sendWsMessage = function (data) {
-        return ws.send($.toJSON(data));
-    };
     var onMessage = function (e) {
         var msg = $.parseJSON(e.data);
         var target3 = msg.target;
@@ -67,14 +56,36 @@ window.dw = (function () {
         lg('Got: ' + JSON.stringify(msg));
         return selection[event4](argument5);
     };
+    var sendWsMessage = function (data) {
+        if (typeof this.dw !== 'undefined' && typeof dw.ws !== 'undefined' && typeof dw.ws === 'object' && null !== dw.ws) {
+            if (dw.ws.readyState === 1) {
+                return dw.ws.send($.toJSON(data));
+            } else {
+                return console.log('dw.ws is not open');
+            };
+        } else {
+            return console.log('dw.ws is unavailable');
+        };
+    };
     this.lg = lg;
     this.makeElementInserter = makeElementInserter;
     this.insertElement = insertElement;
-    this.initPhase2 = initPhase2;
-    this.sendWsMessage = sendWsMessage;
     this.onMessage = onMessage;
-    INSERTER = makeElementInserter('prepend', 'body');
-    ws = (x = $.gracefulWebSocket('ws://127.0.0.1:8766/jm'), (x.onopen = initPhase2, x));
+    this.sendWsMessage = sendWsMessage;
+    this.INSERTER = makeElementInserter('prepend', 'body');
+    this.ws = 1;
+    var x = $.gracefulWebSocket('ws://127.0.0.1:8766/jm');
+    var wsError = function (e) {
+        return console.log('ws hd an error.');
+    };
+    var wsOpen = function (e) {
+        return lg('websocket has opened');
+    };
+    dw.ws = x;
+    x.onerror = wsError;
+    x.onopen = wsOpen;
+    x.onmessage = onMessage;
+    console.log('dw module has initialized');
     return this;
 }).call({ INSERTER : null, ws : null });
 // Do not edit, generated from parenscript.

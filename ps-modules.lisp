@@ -95,7 +95,7 @@
 (defclass javascript-code-fragment (javascript-named-thing)
   ((module :type javascript-code-module :initarg :module :reader module)
    (sequence-number :reader sequence-number)
-   (parenscript :type cons :initarg :parenscript :reader parenscript)))
+   (parenscript :type t :initarg :parenscript :reader parenscript)))
 
 (defun java-code-fragment-info (module-name fragment-name)
   (gethash fragment-name (code-fragments (module-info module-name))))
@@ -171,7 +171,7 @@
              (with-slots ((var-name name) (var-init parenscript)) code-fragment
                (push var-name variables)
                (push 'null variables)
-               (push `(setf ,var-name ,var-init) var-inits)))
+               (push `(setf (@ this ,var-name) ,var-init) var-inits)))
             (javascript-function
              (with-slots ((func-name name) (func-args args) (func-body parenscript)) code-fragment
                (cond

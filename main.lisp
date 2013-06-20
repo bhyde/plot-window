@@ -44,15 +44,16 @@ Note that this sets *last-global-eval*."
 For example: (ps-eval-in-client* '(alert \"hi\"))"
   `(send-global-eval (ps* ,@parenscript-forms)))
 
-(defmacro ps-eval-in-client (&body parenscript-forms)
-  `(send-global-eval
-    (ps
-      (setf (@ dw last-result)
-            (try (progn ,@parenscript-forms)
-                 (:catch (e)
-                   ((@ dw lg)
-                    (interpolate
-                     "{Error: ${(@ e message)} at ${(@ e file-name)}:${(@ e line-number)}}"))
-                   e))))))
+(defparameter *catch-eval-in-client-errors* nil)
 
+(defmacro ps-eval-in-client (&body parenscript-forms)
+  (let ((body `(progn ,@parenscript-forms)))
+    (when *catch-eval-in-client-errors*
+      (setf body `(try ,body
+                       (:catch (e)
+                         ((@ dw lg)
+                          (interpolate "[Error: ${(@ e message)}]"))
+                         e))))
+    `(send-global-eval
+      (ps (setf (@ dw last-result) ,body)))))
 

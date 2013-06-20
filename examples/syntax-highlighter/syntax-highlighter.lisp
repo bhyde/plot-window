@@ -69,27 +69,4 @@
                   (f)))))))))
 
 
-#+nil
-(define-easy-handler (SyntaxHighlighter-foo :uri "/sh") ()
-  (with-my-page (s)
-    (add-javascript-libraries 'jquery 'syntax-javascript-highlighter)
-    (with-header-fragment (s)
-      (:link
-       :rel "stylesheet"
-       :type "text/css"
-       :href "http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shCore.css")
-      (:link
-       :rel "stylesheet"
-       :type "text/css"
-       :onload "javascript:alert(123)"
-       :href "http://agorbatchev.typepad.com/pub/sh/3_0_83/styles/shThemeDefault.css"))
-    (ps-onready (s)
-      (chain -syntax-highlighter (all)))
-    (:body
-     (:pre
-      :class "brush: js"
-      (str
-       (lisp
-        (ps (defun f (x) (+ 1 x)))))
-      ))))
 
