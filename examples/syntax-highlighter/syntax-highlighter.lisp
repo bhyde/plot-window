@@ -25,17 +25,18 @@
                         :type "text/css"
                         :href url
                         :onload continuation))))))))
-    
-(defpsmacro with-css ((url) &body body)
-  `(flet ((continuation () 
-            (chain console (log (concatenate'string "loaded: " ,url)))
-            ,@body))
-     (chain ($ "<link>")
-          (attr (create :rel "stylesheet"
-                        :type "text/css"
-                        :href ,url
-                        :onload #'continuation))
-          (append-to "head"))))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)    
+  (defpsmacro with-css ((url) &body body)
+    `(flet ((continuation () 
+              (chain console (log (concatenate'string "loaded: " ,url)))
+              ,@body))
+       (chain ($ "<link>")
+              (attr (create :rel "stylesheet"
+                            :type "text/css"
+                            :href ,url
+                            :onload #'continuation))
+              (append-to "head")))))
 
 (defun syntax-highlighter-example-1 ()
   (let* ((example
