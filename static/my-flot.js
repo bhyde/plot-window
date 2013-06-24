@@ -1,10 +1,10 @@
 // Do not edit, generated from parenscript.
 dw.myFlot = (function () {
     var myFlot = this;
-    var setupPlot = function (instructions) {
-        return $('#ex1').plot(instructions.series, instructions.details);
-    };
-    var initScatterPlot = function () {
+    var initScatterPlot = function (jq) {
+        var setupPlot = function (instructions) {
+            return jq.plot(instructions.series, instructions.details);
+        };
         var d1 = function () {
             return { 'label' : 'up', 'data' : (function () {
                 var collect2 = [];
@@ -25,7 +25,6 @@ dw.myFlot = (function () {
         };
         return setupPlot({ 'series' : [d1(), d2()], 'details' : { 'series' : { 'lines' : { 'show' : null }, 'points' : { show : true } } } });
     };
-    this.setupPlot = setupPlot;
     this.initScatterPlot = initScatterPlot;
     var setupFunction = function ($) {
         var revisePlot = function (plottingInstructions) {

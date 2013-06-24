@@ -24,9 +24,9 @@
 (defun-javascript (dw make-element-inserter) (how location)
   (create 'how how 'location location))
 
-(defvar-javascript (dw *inserter*) (make-element-inserter :prepend "body"))
+(defvar-javascript (dw *inserter*) ($ (lambda () (setf (@ dw *inserter*)  (make-element-inserter :prepend ($ "body"))))))
 
-(defun-javascript (dw insert-element) (new-element continuation &optional (element-inserter *inserter*))
+(defun-javascript (dw insert-element) (new-element continuation &optional (element-inserter (@ dw *inserter*)))
   (let* ((loc (@ element-inserter location)))
     (unless (= 1 (length loc))
       (throw
@@ -90,6 +90,7 @@
       (setf (@ x onopen)    #'ws-open)
       (setf (@ x onmessage) #'on-message)))
 
+  
   (chain console (log "dw module has initialized")))
 
 (defun-javascript (dw send-ws-message) (data)
@@ -106,4 +107,15 @@
     (t
      (chain console (log "dw.ws is unavailable")))))
 
+(defun-javascript (dw clear-screen) ()
+  (chain ($ :body) (empty)))
 
+(defun clear-display-window ()
+  (ps-eval-in-client (chain dw (clear-screen))))
+
+
+#+nil
+(defun-javascript (dw create) (prototype-object)
+  (flet ((-f () (create)))
+    (setf (@ -f prototype) o)
+    (new -f)))

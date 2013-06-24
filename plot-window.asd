@@ -12,6 +12,7 @@
                #:hunchentoot      ; web server
                #:cl-who           ; html generation
                #:cl-interpol      ; also for html generation
+               #:named-readtables ; so we can manage cl-interpol
                #:parenscript      ; javascript via sexprs
                #:css-lite
                #:clws             ; web sockets

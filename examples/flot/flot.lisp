@@ -9,13 +9,12 @@
   :loaded-p (boundp (@ dw my-flot))
   :requires (flot))
 
-(defun-javascript (my-flot setup-plot) (instructions)
-  (chain ($ "#ex1")
-         (plot (@ instructions series)
-               (@ instructions details))))
-
-(defun-javascript (my-flot init-scatter-plot) ()
-  (flet ((d1 ()
+(defun-javascript (my-flot init-scatter-plot) (jq)
+  (flet ((setup-plot (instructions)
+           (chain jq
+                  (plot (@ instructions series)
+                        (@ instructions details))))
+         (d1 ()
            (create :label "up"
                    :data (loop for i from 1 to 10
                             collect (list i i))))
@@ -23,7 +22,7 @@
            (create :label "random"
                    :data (loop for i from 1 to 10
                             collect (list i (1+ (random 10)))))))
-    (setup-plot (create 
+    (setup-plot (create
                  :series (list (d1) (d2))
                  :details 
                  (create :series
@@ -39,11 +38,15 @@
 
 (defun flot-example-1 ()
   (ps-eval-in-client
-    (with-javascript-modules (my-flot)
-      (chain ($ :body) (empty))
-      (chain ($ :body) (append "<div>") (attr :id "ex1"))
-      ((@ dw my-flot init-scatter-plot)))))
-
+    (let ((new-plot
+           ($ "<div/>"
+              (create :id "ex1"
+                      :width "500px" :height "500px"))))
+      (with-javascript-modules (my-flot)
+        (chain dw (insert-element new-plot
+                                  (lambda ()
+                                    ((@ dw my-flot init-scatter-plot) new-plot))
+                                  ))))))
 
 (defun plot (&optional (data-points (flet ((f (i n)
                                              (/ (* i (sin i)) n)))

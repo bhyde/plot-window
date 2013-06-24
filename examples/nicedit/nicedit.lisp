@@ -6,9 +6,12 @@
 
 (defun nicedit-example1 ()
   (ps-eval-in-client
-    (chain ($ :body) (empty))
-    (chain ($ :body) (append "<div id='ta' style='height:30em'/>"))
-    (with-javascript-modules (nicedit)
-      (chain (new (nic-Editor (create 'full-panel t)))
-             (panel-instance :ta (create 'has-panel t))))))
+    (let ((new-element ($ "<div/>" (create :height "250px" :width "600px"))))
+      (with-javascript-modules (nicedit)
+        (chain dw
+               (insert-element
+                new-element
+                (lambda ()
+                  (chain (new (nic-Editor (create 'full-panel t)))
+                         (panel-instance (aref new-element 0) (create 'has-panel t))))))))))
 

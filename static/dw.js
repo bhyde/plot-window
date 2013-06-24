@@ -10,7 +10,7 @@ window.dw = (function () {
     };
     var insertElement = function (newElement, continuation, elementInserter) {
         if (elementInserter === undefined) {
-            elementInserter = INSERTER;
+            elementInserter = dw.INSERTER;
         };
         var loc = elementInserter.location;
         if (1 !== loc.length) {
@@ -67,12 +67,18 @@ window.dw = (function () {
             return console.log('dw.ws is unavailable');
         };
     };
+    var clearScreen = function () {
+        return $('body').empty();
+    };
     this.lg = lg;
     this.makeElementInserter = makeElementInserter;
     this.insertElement = insertElement;
     this.onMessage = onMessage;
     this.sendWsMessage = sendWsMessage;
-    this.INSERTER = makeElementInserter('prepend', 'body');
+    this.clearScreen = clearScreen;
+    this.INSERTER = $(function () {
+        return dw.INSERTER = makeElementInserter('prepend', $('body'));
+    });
     this.ws = 1;
     var x = $.gracefulWebSocket('ws://127.0.0.1:8766/jm');
     var wsError = function (e) {

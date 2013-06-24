@@ -5,25 +5,30 @@
   ; "https://raw.github.com/jquery/jquery-color/master/jquery.color.js"
   :loaded-p (boundp (@ j-query -color)))
 
-
 (defun j-query-color-box-example ()
   (ps-eval-in-client
-    (flet ((colorful ()
-             (chain ($ ".block")
-                    (animate (create :background-color "rgb(255,180,180)") 1000)
-                    (delay 500)
-                    (animate (create :background-color "olive") 1000)
-                    (delay 500)
-                    (animate (create :background-color "#00f") 1000)
-                    (delay 500)
-                    (animate (create :background-color "snow") 1000)))
-           (setup ()
-             (chain ($ :body) (empty))
-             (chain ($ :body) (append "<button id='go'>Go</button>"))
-             (chain ($ :body)
-                    (append "<div class='block' style='margin:10px;width:200px;height:100px;border:1px dotted;background-color:snow'>"))))
-      (setup)
-      (with-javascript-modules (jquery-color)
-        (chain ($ "#go")
-               (click colorful))))))
+    (macrolet ((ps-css (&rest static-rules) 
+                 (apply #'inline-css static-rules)))
+      (let ((element
+             ($
+              (who-ps-html
+               (:div
+                (:button "go")
+                (:div :style (ps-css :margin "10px"
+                                     :width "200px"
+                                     :height "100px"
+                                     :border "1px dotted"
+                                     :background-color "snow")))))))
+        (flet ((color-animation ()
+                 (chain ($ :div element)
+                        (animate (create :background-color "rgb(255,180,180)") 1000)
+                        (delay 500)
+                        (animate (create :background-color "olive") 1000)
+                        (delay 500)
+                        (animate (create :background-color "#00f") 1000)
+                        (delay 500)
+                        (animate (create :background-color "snow") 1000))))
+          (with-javascript-modules (jquery-color)
+            (chain ($ :button element) (click color-animation))
+            (chain dw (insert-element element))))))))
 
