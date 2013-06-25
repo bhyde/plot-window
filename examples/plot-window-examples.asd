@@ -9,5 +9,6 @@
                ;; plot-window-timeline
                plot-window-j-query-color-box
                plot-window-d3js
-               plot-window-flot)
+               plot-window-flot
+               plot-window-slickgrid)
   :components ((:file "demo")))

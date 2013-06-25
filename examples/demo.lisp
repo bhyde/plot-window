@@ -10,7 +10,8 @@
           ("Maps (via mapabstration)" mapabstraction-example 20 6)
           ("Syntax Highlighting" syntax-highlighter-example-1 8)
           ("D3JS is cool" d3js-example-1 7)
-          ("Plots (using flot)" flot-example-1 0))
+          ("Plots (using flot)" flot-example-1 2)
+          ("Datagrid (using slickgrid)" slickgrid-example-1 0))
        do
        (format t "~&~A" title)
        (funcall fnc)
