@@ -13,7 +13,7 @@ First: load and run this:
 ```
 
 Second: Visit http://localhost:8765/ in a quality web browser. I've only tried chrome.
-The resulting page becomes your plot display.  
+The resulting page becomes your REPL's display window.
 
 Third: Load up an example, in this case a plot widget: `(ql:quickload "plot-window-flot")`
 
