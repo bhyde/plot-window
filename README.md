@@ -8,13 +8,17 @@ First: load and run this:
 ```
 
 Second: Visit http://localhost:8765/ in a quality web browser. I've only tried chrome.
-This becomes your plot display.  To start a random example plot is shown.
+The resulting page becomes your plot display.  
 
-Third: Plot your data.
+Third: Load up an example, in this case a plot widget: `(ql:quickload "plot-window-flot")`
 
 ```common-lisp
 > (pw:plot (loop for i below 50 collect (list i (random 20))))
 ```
+
+You can clear the window with `(ps:clear-display-window)`, and you can add single elements to the page using `(ps:add-element "<p>Hi there</p>")`
+
+A number of examples are in the example's subdirectory.  Each of these has it's on asd.  You may load them all via `(ql:quickload "plot-window-examples")`.  And once they are all loaded you can run a little demo: `(ql:demo t)`
 
 Magic
 -----
