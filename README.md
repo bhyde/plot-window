@@ -1,5 +1,10 @@
-Need to plot some data from Common Lisp?  This will solve your problem by making a pretty plot
-in your web browser, effectively using that browser as a display for your chart.
+Need to plot some data from Common Lisp?  This will solve your problem
+by making a pretty plot in your web browser, effectively using that
+browser as a display for your chart.  It uses a cute Javascript
+plotting widget known as flot.  But it can do much more; you can push
+arbitrary content to a webpage, and by using other Javascript widgets
+lots of other things are possible; including maps, rich text editors,
+syntax highlighting, etc. etc.
 
 First: load and run this:
 ```common-lisp
