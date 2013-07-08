@@ -1,0 +1,92 @@
+* Introduction
+
+Ps-modules provides some forms useful for managing a collection of
+javascript libraries.  We call these modules, and they come in two
+flavors: 1) 3rd party libraries and 2) code modules.  We can arrange
+for these modules to be available to our web pages in two ways:
+a) the traditional script tags in the header of our page, and b)
+by dynamically loading only when we need them, i.e. after the page
+has been originally loaded.  
+
+So that's four scenarios. 
+
+** Scenario 1a: Third party library load with the page.
+
+Let's look at the simplest, i.e. 1a.  3rd
+party libraries are declared using declare-javascript-library.  Here
+we define three such libaries, and as you can see each library has
+a name, url, and possibly some dependencies on other libraries.  In
+addition a parenscrip form we can use to sense if the library has
+already been loaded, this is useful in the (b) scenarios.
+
+#begin_example
+(declare-javascript-library jquery () 
+  :url "//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"
+  :loaded-p (boundp j-query))
+
+(declare-javascript-library jquery-json (jquery) 
+  :url "/jquery.json-2.4.js"
+  :loaded-p (boundp (@ j-query to-j-s-o-n)))
+
+(declare-javascript-library graceful-web-socket (jquery)
+  :url "/jquery.gracefulWebSocket.js"
+  :loaded-p (boundp (@ j-query graceful-web-socket)))
+#end_example
+
+In the traditional case we will want to arrange to have script
+tags in our webpage's header.  Emit-script-tags-for-javascript-libraries
+does that.  For example:
+
+#begin_example
+(define-easy-handler (example-foo :uri "/foo.html") ()
+  (with-html-output-to-string (s nil :indent t)
+    (:head
+      (:title "Foo!")
+      (emit-script-tags-for-javascript-libraries
+         s '(graceful-web-socket jquery-json)))
+    (:body
+       ...)))
+#end_example
+
+That example uses hutchentoot and cl-who for templating, but that's not
+necessary.  The javascript tags inserted by emit-script-tags-for-javascript-libraries
+look like this:
+#begin_code HTML
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="/jquery.gracefulWebSocket.js"></script>
+<script type="text/javascript" src="/jquery.json-2.4.js"></script>
+#end_code
+Note that the required dependencies have been included automatically.
+
+** Scenario 1b: Third party library loaded on demand
+
+If we wish to load some libraries after the page loads we can do this
+from javascript.  In parenscript we would write:
+
+#begin_example
+  (with-javascript-libaries (graceful-web-socket jquery-json)
+    ...more parenscript code ...)
+#end_example
+
+The parenscript macro with-javascript-libaries will arrange to fire the body of
+the form after the libraries have been successfully loaded.
+
+** Scenario 2: Javascript code libraries.
+
+The techniques outlined above work for our own parenscript libraries, which we
+refer to as javascript-code-modules.  Just modules consist of a number of forms
+in our Lisp sources using.
+
++ define-javascript-code-module -- defines a module
++ defun-javascript -- defines a function in that module
++ defvar-javascript -- defines a variable in that module
++ definit-javascript -- defines code to run when the module is loaded.
+
+For example here is a simple module, name alpha.
+
+#+begin_code COMMON-LISP
+(define-javascript-code-module alpha (jquery))
+
+(defun alpha (lg alpha) (msg)
+  (chain console (log msg)))
+#+end_code
