@@ -49,6 +49,32 @@
         (chain dw (insert-element new-element animation))))))
 
 
-
-
+(defun d3js-graph-of-asdf-system (system-designator)
+  (let ((system-ids (make-hash-table :test #'eq)))
+    (macrolet ((system-id (s) `(gethash ,s system-ids))
+               (depends-on (s) `(slot-value ,s 'asdf/component::sibling-dependencies))
+               (system-name (s) `(slot-value ,s 'asdf/component::name)))
+      (let ((c -1))
+        (labels ((recure (system)
+                   (unless (system-id system)
+                     (setf (system-id system) (incf c))
+                     (loop 
+                        for requirement in (depends-on system)
+                        do (recure (asdf:find-system requirement))))))
+          (recure (asdf:find-system system-designator))))
+      (flet ((graph-node-of-system (s) `((:name ,@(system-name s)) (:group . 1)))
+             (graph-links-of-system (s)
+               (loop 
+                  with id = (system-id s)
+                  for requirement in (depends-on s)
+                  as rid = (system-id (asdf:find-system requirement))
+                  collect `((:target ,@id) (:source ,@rid ) (:wieght . 1)))))
+        `((:nodes ,@(loop
+                       with all-systems = (sort (alexandria:hash-table-keys system-ids)
+                                                #'< :key #'(lambda (s) (system-id s)))
+                       for sys in all-systems
+                       collect (graph-node-of-system sys)))
+          (:links ,@(loop
+                       for sys being each hash-key in system-ids
+                       nconc (graph-links-of-system sys))))))))
 
