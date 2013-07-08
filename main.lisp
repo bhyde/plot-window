@@ -57,3 +57,5 @@ For example: (ps-eval-in-client* '(alert \"hi\"))"
     `(send-global-eval
       (ps (setf (@ dw last-result) ,body)))))
 
+(defun add-element (html-element-text)
+  (ps-eval-in-client* `(chain dw (insert-element ($ ,html-element-text)))))
