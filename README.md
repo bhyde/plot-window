@@ -6,7 +6,8 @@ arbitrary content to a webpage, and by using other Javascript widgets
 lots of other things are possible; including maps, rich text editors,
 syntax highlighting, etc. etc.
 
-First: load and run this:
+First: load and run this, clone this repository and assure ASDF can
+find it then:
 ```common-lisp
 > (ql:quickload "plot-window")
 > (cl-user:initialize-application)
