@@ -6,8 +6,9 @@ arbitrary content to a webpage, and by using other Javascript widgets
 lots of other things are possible; including maps, rich text editors,
 syntax highlighting, etc. etc.
 
-First: load and run this, clone this repository and assure ASDF can
-find it then:
+First: clone this repository (to ~/.quicklisp/local-projects for example),
+then having assured that ASDF can find it (say by resetting ASDF's source respository
+<code>(asdf:clear-source-registry)</code>), and then load and run the application as so:
 ```common-lisp
 > (ql:quickload "plot-window")
 > (cl-user:initialize-application)
