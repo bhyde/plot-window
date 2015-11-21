@@ -81,8 +81,8 @@
 
 ;;;; JSON messaging over that web socket.
 
-(defvar *current-websocket-client*)
-(defvar *last-websocket-client*)
+(defvar *current-websocket-client* nil)
+(defvar *last-websocket-client* nil)
 (defvar *json-rcp-handlers* (make-hash-table :test #'equalp))
 
 (defmacro define-json-message-handler (name (&rest parameters) &body body)
