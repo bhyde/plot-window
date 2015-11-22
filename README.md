@@ -9,7 +9,12 @@ syntax highlighting, etc. etc.
 First: clone this repository (to ~/.quicklisp/local-projects for example),
 then having assured that ASDF can find it (say by resetting ASDF's source respository `(asdf:clear-source-registry)`)
 
-This plot-window requires a patched version of cl-interpol (until changes are merged in cl-interpol). The patched cl-interpol can be found at https://github.com/mmaul/cl-interpol.git. 
+This plot-window requires a modified version of cl-interpol (until changes are merged in cl-interpol). The patched cl-interpol can be found at https://github.com/mmaul/cl-interpol.git and the modified version can be found on the `use-interpol-reader-outside-of-reader` branch. 
+```
+git clone https://github.com/mmaul/cl-interpol.git
+cd cl-interpol
+git checkout use-interpol-reader-outside-of-reader
+```
 
 The plot-window can be loaded and ran as so:
 ```common-lisp
