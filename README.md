@@ -7,8 +7,11 @@ lots of other things are possible; including maps, rich text editors,
 syntax highlighting, etc. etc.
 
 First: clone this repository (to ~/.quicklisp/local-projects for example),
-then having assured that ASDF can find it (say by resetting ASDF's source respository
-<code>(asdf:clear-source-registry)</code>), and then load and run the application as so:
+then having assured that ASDF can find it (say by resetting ASDF's source respository `(asdf:clear-source-registry)`)
+
+This plot-window requires a patched version of cl-interpol (until changes are merged in cl-interpol). The patched cl-interpol can be found at https://github.com/mmaul/cl-interpol.git. 
+
+The plot-window can be loaded and ran as so:
 ```common-lisp
 > (ql:quickload "plot-window")
 > (in-package :pw)
