@@ -1,15 +1,19 @@
-Need to plot some data from Common Lisp?  This will solve your problem
-by making a pretty plot in your web browser, effectively using that
-browser as a display for your chart.  It uses a cute Javascript
-plotting widget known as flot.  But it can do much more; you can push
-arbitrary content to a webpage, and by using other Javascript widgets
-lots of other things are possible; including maps, rich text editors,
-syntax highlighting, etc. etc.
+`plot-window` provides Javascript code and content push capability to a web browser using websockets. `plot-window` goes a step further by providing tooling for using and interacting with Javascript and Javascript libraries. Javscript interaction is done usin parenscript providing a holistic interaction between Lisp and the browser. 
+
+ Examples have been provided for working with the following libraries:
+ * flot - Plotting
+ * d3js - Plotting
+ * mapstraction - Openstreet Maps Mapping
+ * nice-edit - Rich text editor
+ * syntax-highlighter - Syntax highlighting
+
+Getting Started
+---------------
 
 First: clone this repository (to ~/.quicklisp/local-projects for example),
 then having assured that ASDF can find it (say by resetting ASDF's source respository `(asdf:clear-source-registry)`)
 
-This plot-window requires a modified version of cl-interpol (until changes are merged in cl-interpol). The patched cl-interpol can be found at https://github.com/mmaul/cl-interpol.git and the modified version can be found on the `use-interpol-reader-outside-of-reader` branch. 
+`plot-window` requires a modified version of cl-interpol (until changes are merged in cl-interpol). The patched cl-interpol can be found at https://github.com/mmaul/cl-interpol.git and the modified version can be found on the `use-interpol-reader-outside-of-reader` branch. 
 ```
 git clone https://github.com/mmaul/cl-interpol.git
 cd cl-interpol
@@ -36,6 +40,8 @@ Third: Load up an example, in this case a plot widget:
 You can clear the window with `(clear-display-window)`, and you can add single elements to the page using `(pw:add-element "<p>Hi there</p>")`
 
 A number of examples are in the example's subdirectory.  Each of these has it's on asd.  You may load them all via `(ql:quickload "plot-window-examples")`.  And once they are all loaded you can run a little demo: `(ql:demo t)`
+
+Generated Javascript modules are stored in the static directory this location set with the parameter `*where-to-store-js-module-files*`. It is set by default to the ASDF system relative path of `plot-window`.
 
 Magic
 -----
