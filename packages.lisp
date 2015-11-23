@@ -15,7 +15,7 @@
                           #:make-css-var #:pt #:px)
   (:nicknames "PW")
   (:export 
-   ;; also cl-user:initalize-application
+   #:initialize-application
    #:plot))
 
   (unless (named-readtables:find-readtable :cl-interpol)

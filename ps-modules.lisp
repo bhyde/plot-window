@@ -183,7 +183,7 @@
                
 ;;;;
 
-(defparameter *where-to-store-js-module-files* "/Users/bhyde/w/plot-window/static/")
+(defparameter *where-to-store-js-module-files* (namestring (asdf:system-relative-pathname 'plot-window "static/")))
 
 (defgeneric update-js-module-file-if-necessary (m)
   (:documentation "Compile time hook which provides an oportunity to regenerate the javascript file."))

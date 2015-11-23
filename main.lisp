@@ -2,7 +2,7 @@
 
 ;;;; Starting our Servers
 
-(defun cl-user::initialize-application (&key (port 8765))
+(defun initialize-application (&key (port 8765))
   (start-web-server :port port)
   (start-clws-server)
   (start-and-register-json-rpc-resource))

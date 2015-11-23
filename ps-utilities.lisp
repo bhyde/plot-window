@@ -83,7 +83,7 @@ body after the given number of milliseconds."
   "Avoid the need to use a unique read table."
   (assert (stringp str))
   (with-input-from-string (s str)
-    (cl-interpol::interpol-reader s #\? nil)))
+    (cl-interpol:interpol-reader s #\? nil :recursive-p nil)))
 
 (defmacro interpolate (str)
   (interp% str))
