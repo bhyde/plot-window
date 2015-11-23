@@ -13,11 +13,9 @@ Getting Started
 First: clone this repository (to ~/.quicklisp/local-projects for example),
 then having assured that ASDF can find it (say by resetting ASDF's source respository `(asdf:clear-source-registry)`)
 
-`plot-window` requires a modified version of cl-interpol (until changes are merged in cl-interpol). The patched cl-interpol can be found at https://github.com/mmaul/cl-interpol.git and the modified version can be found on the `use-interpol-reader-outside-of-reader` branch. 
+`plot-window` requires version 0.2.5 of cl-interpol. Until the Quicklisp pull from the cl-interpol upstream, you will need to clone cl-interpol from it's github repository https://github.com/edicl/cl-interpol.git. 
 ```
-git clone https://github.com/mmaul/cl-interpol.git
-cd cl-interpol
-git checkout use-interpol-reader-outside-of-reader
+git clone https://github.com/edicl/cl-interpol.git
 ```
 
 The plot-window can be loaded and ran as so:
